@@ -1,11 +1,20 @@
 from langchain_community.llms import Ollama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder, FewShotChatMessagePromptTemplate
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
-from langchain.utilities import WikipediaAPIWrapper
-from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+from langchain_community.utilities import WikipediaAPIWrapper
+from langchain.agents import Tool, AgentExecutor
+from langchain_core.pydantic_v1 import BaseModel
 
 model = Ollama(model = 'qwen2')
 wiki = WikipediaAPIWrapper(top_k_results = 5)
+
+tools = [
+    Tool(
+        name = 'Wikipedia',
+        func = wiki.run,
+        description = 'Полезный источник знаний при поиске информации о некотором специфичном разделе'
+    )
+]
 
 memory = ConversationBufferWindowMemory(
     memory_key = 'chat_history',
@@ -29,7 +38,7 @@ examples = [
     },
     {
         'input': 'Здравствуйте, в последнее время по ночам просыпаюсь от сильного сердцебиения. Начинают потеть ладожки. Отрыжка. Вздутие живота. Тяжело дышать. Шею не могу повернуть, между лопатками также хруст',
-        'output': 'Вамужно начать с обследования ЖКТ, следить за питанием, и, возможно, сменить подушку',
+        'output': 'Вамужно начать с обследования ЖКТ, следить за питанием, и, возможно, сменить подушку'
     },
     {
         'input': 'После еды или воды стоит ком в горле, как будто поднимается из желудка. Есть приступы тошноты и рвота. Моча стала цветом крепкого чая. Пожелтели глазные яблоки',
@@ -42,6 +51,14 @@ examples = [
     {
         'input': 'Появились высыпания на руках, которые начали сильно зудеть',
         'output': 'Вы что-нибудь ели необычное за день до появления симптомов? У вас есть аллергия на специфичные продукты?'
+    },
+    {
+        'input': 'Здравствуйте, доктор! В последнее время я плохо себя чувствую',
+        'output': 'Здравствуйте! Опишите, пожалуйста, конкретнее, в чем это проявляется?'
+    },
+    {
+        'input': 'Что делать, если кажется, что я сломал руку?',
+        'output': 'Вам необходимо посетить травматолога и сделать снимок.'
     }
 ]
 
@@ -63,7 +80,7 @@ prompt = ChatPromptTemplate.from_messages(
             'system',
             'Ты - русскоязычный лечащий врач. Твоя задача - постараться помочь пациенту разрешить проблемы со \
             здоровьем и дать топ - 5 наиболее вероятных диагнозов в порядке убывания релевантности, согласно \
-            Международной Классификации Болезней МКБ-11. \
+            Международной Классификации Болезней МКБ. \
             Если пациент не предоставил потенциально полезной информации о предпосылках заболевания или о характерных \
             симптомах, уточни у него, задавая вопросы. \
             Если ты не знаешь, как протекает болезнь или что поможет при лечении - поищи информацию в Wikipedia. \
@@ -84,4 +101,11 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-chain = prompt | model
+class Question(BaseModel):
+    __root__: str
+
+agent = prompt | model
+
+agent_executor = AgentExecutor(agent = agent, 
+                               tools = tools, 
+                               verbose = False).with_types(input_type = Question)
