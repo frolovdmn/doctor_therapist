@@ -101,11 +101,11 @@ prompt = ChatPromptTemplate.from_messages(
     ]
 )
 
-class Question(BaseModel):
-    __root__: str
+# class Question(BaseModel):
+#     __root__: str
 
 agent = prompt | model
 
-agent_executor = AgentExecutor(agent = agent, 
-                               tools = tools, 
-                               verbose = False).with_types(input_type = Question)
+# agent_executor = AgentExecutor(agent = agent, 
+#                                tools = tools, 
+#                                verbose = False).with_types(input_type = Question)
