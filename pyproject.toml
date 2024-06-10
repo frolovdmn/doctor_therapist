@@ -17,7 +17,7 @@ fastapi = ">=0.104.0,<1"
 sse-starlette = "^1.6.5"
 
 [tool.langserve]
-export_module = "doctor_herapist.chain"
+export_module = "doctor_therapist.chain"
 export_attr = "chain"
 
 [tool.templates-hub]
