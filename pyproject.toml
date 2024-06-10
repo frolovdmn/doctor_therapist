@@ -18,7 +18,7 @@ sse-starlette = "^1.6.5"
 
 [tool.langserve]
 export_module = "doctor_therapist.chain"
-export_attr = "chain"
+export_attr = "agent"
 
 [tool.templates-hub]
 use-case = "chatbot"
